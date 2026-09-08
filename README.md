@@ -1,82 +1,142 @@
 # Retail Demand Forecasting & Inventory Planning
 
-End-to-end retail analytics project combining **demand forecasting, model explainability and inventory planning** to support data-driven replenishment decisions.
+End-to-end retail analytics project combining **demand forecasting, machine learning explainability and inventory planning** to support data-driven replenishment decisions.
 
-## Project Overview
+The project goes beyond predicting demand: forecasts are translated into **safety stock, replenishment recommendations and product prioritization**.
 
-The objective of this project is to forecast daily product demand and translate those predictions into practical inventory decisions.
+## Key Results
 
-The analysis focuses on 20 products from a representative retail store and follows a complete analytics workflow:
+- **XGBoost R²:** 0.899
+- **XGBoost MAE:** 10.72 units
+- **Service level:** 91.1% → 98.8%
+- **Total shortage:** 3,200 → 226 units
+- **Shortage reduction:** ~92.9%
+- **20 products** analyzed for inventory planning
 
-- Exploratory data analysis and time-series diagnostics
-- Feature engineering with lag, rolling and calendar variables
-- Time-based model validation
-- Comparison of multiple forecasting models
-- Model explainability with SHAP
-- Forecast-driven safety stock and replenishment planning
-- Value-based ABC inventory classification
-- Operational prioritization based on commercial value and forecast uncertainty
+---
+
+## Forecasting Results
+
+XGBoost clearly outperformed the naive baseline, Linear Regression and Random Forest models.
+
+![Model Comparison](images/model_comparison.png)
+
+The final model closely follows the actual aggregated demand during the unseen test period.
+
+![Forecast vs Actual](images/forecast_vs_actual.png)
+
+---
 
 ## Business Problem
 
-Retail inventory decisions require balancing two competing risks:
+Retail inventory planning requires balancing two competing risks:
 
-- **Stockouts**, which may result in lost sales and lower service levels
-- **Excess inventory**, which increases stock exposure and operational inefficiency
+- **Stockouts**, which may result in lost sales and lower service levels.
+- **Excess inventory**, which increases stock exposure and operational inefficiency.
 
-This project investigates how machine learning forecasts can be used not only to predict demand, but also to improve replenishment and product prioritization decisions.
+The objective of this project is therefore to:
+
+1. Forecast future daily product demand.
+2. Understand the main drivers behind the predictions.
+3. Translate forecasts into inventory replenishment decisions.
+4. Prioritize products according to commercial importance and forecasting uncertainty.
+
+---
 
 ## Dataset
 
-The dataset contains **76,000 daily observations** across:
+The dataset contains **76,000 daily observations** covering:
 
 - 5 stores
 - 20 products
 - 5 product categories
 - 760 days
-- Period: January 2022 – January 2024
+- January 2022 – January 2024
 
-Main variables include demand, price, discounts, promotions, inventory levels, units sold, units ordered, seasonality and other contextual information.
+Variables include:
 
-For the detailed modeling stage, store `S003` was selected as a representative store, resulting in **15,200 observations across 20 products**.
+- Demand
+- Price
+- Discount
+- Promotion
+- Inventory Level
+- Units Sold
+- Units Ordered
+- Product Category
+- Seasonality
+- Weather Condition
+- Competitor Pricing
 
-> **Dataset source:** https://www.kaggle.com/datasets/atomicd/retail-store-inventory-and-demand-forecasting
-> The dataset is distributed under the **Apache License 2.0**.
+For the detailed forecasting exercise, store `S003` was selected as a representative store, resulting in **15,200 observations across 20 product-level time series**.
+
+**Dataset source:** [Original dataset](https://www.kaggle.com/datasets/atomicd/retail-store-inventory-and-demand-forecasting)
+
+The dataset is distributed under the **Apache License 2.0**.
+
+The raw dataset is not included in this repository. Download instructions are available in [`data/README.md`](data/README.md).
+
+---
 
 ## Methodology
 
-### 1. Exploratory Data Analysis
+The project follows an end-to-end analytics workflow:
 
-The analysis examined:
+### 1. Data Understanding & Preparation
 
-- Demand distributions and product variability
+- Data quality and completeness checks
+- Duplicate and missing-value analysis
+- Daily-frequency validation
+- Chronological ordering of product time series
+- Identification of potential outliers
+
+### 2. Exploratory Data Analysis
+
+The analysis explored:
+
 - Store-level demand behavior
-- Outliers and promotional effects
-- Autocorrelation and periodic patterns
+- Product-level demand variability
+- Promotions and discounts
+- Product categories and seasonality
+- Autocorrelation
 - Stationarity
-- Relationships between demand and commercial variables
+- Periodic demand patterns
 
-A notable finding was a strong **~76-day cyclical pattern** for product `P0006`.
+A particularly interesting result was a dominant **~76-day cyclical pattern** for product `P0006`.
 
-### 2. Feature Engineering
+### 3. Feature Engineering
 
-The forecasting dataset includes:
+The forecasting model uses:
 
-- Demand lags: 1, 2, 7, 14, 30 and 76 days
+**Historical demand features**
+- Lags: 1, 2, 7, 14, 30 and 76 days
 - Rolling means: 7, 14 and 30 days
 - 7-day rolling standard deviation
-- Calendar variables
-- Product and category information
+
+**Calendar features**
+- Day of week
+- Month
+- Week of year
+- Weekend indicator
+
+**Commercial and product features**
+- Product
+- Category
 - Price
 - Discount
 - Promotion
 - Seasonality
 
-Inventory-related variables such as `Inventory Level`, `Units Sold` and `Units Ordered` were excluded from the forecasting model to avoid temporal ambiguity and potential leakage.
+`Inventory Level`, `Units Sold` and `Units Ordered` were excluded from the forecasting model to reduce temporal ambiguity and potential leakage.
 
-### 3. Forecasting Models
+---
 
-Models were evaluated using a chronological train/test split.
+## Forecasting Approach
+
+The problem was formulated as **one-day-ahead supervised demand forecasting**.
+
+A chronological train/test split was used rather than a random split to preserve the temporal structure of the data.
+
+Four forecasting approaches were evaluated:
 
 | Model | MAE | RMSE | MAPE | R² |
 |---|---:|---:|---:|---:|
@@ -86,7 +146,9 @@ Models were evaluated using a chronological train/test split.
 | Tuned Random Forest | 16.35 | 23.11 | 27.06% | 0.728 |
 | **XGBoost** | **10.72** | **14.06** | **17.70%** | **0.899** |
 
-**XGBoost achieved the strongest overall forecasting performance.**
+**XGBoost achieved the strongest overall performance** and was selected as the final forecasting model.
+
+---
 
 ## Model Explainability
 
@@ -104,26 +166,45 @@ Relevant predictive signals included:
 
 These relationships are interpreted as **predictive associations rather than causal effects**.
 
+Forecast performance was also evaluated individually across the 20 products. All products achieved an R² above approximately **0.81**, although some products, particularly `P0006`, retained greater residual uncertainty.
+
+---
+
 ## Inventory Planning
 
-Forecasts were translated into a simple replenishment policy:
+Forecasts were translated into a simple replenishment framework:
 
-**Target Stock = Forecast Demand + Safety Stock**
+> **Target Stock = Forecast Demand + Safety Stock**
 
-**Recommended Order = max(Target Stock − Previous Inventory, 0)**
+> **Recommended Order = max(Target Stock − Previous Inventory, 0)**
 
-Product-specific safety stocks were estimated from out-of-sample forecasting errors generated inside the training period.
+Safety stock was estimated separately for each product using **out-of-sample forecast errors generated through temporal validation within the training period**.
 
-### Safety Stock Results
+This avoids using the final test period to determine inventory buffers.
 
-Using a **95th-percentile forecast-error safety stock policy**:
+### Safety Stock Policy
 
-- Service level increased from **91.09% to 98.80%**
-- Total shortages decreased from **3,200 to 226 units**
-- Shortages were reduced by approximately **92.9%**
-- Average excess stock increased only slightly in the retrospective simulation
+Several uncertainty percentiles were evaluated:
 
-The 95th-percentile policy was selected as a service-oriented scenario, not as a mathematically optimal inventory policy.
+| Policy | Service Level | Total Shortage | Avg. Excess Stock | Total Ordered |
+|---|---:|---:|---:|---:|
+| No Safety Stock | 91.09% | 3,200 | 217.24 | 14,065 |
+| 75th percentile | 94.74% | 1,409 | 218.12 | 18,250 |
+| 90th percentile | 97.48% | 536 | 219.51 | 22,932 |
+| **95th percentile** | **98.80%** | **226** | **221.13** | **27,685** |
+| 99th percentile | 99.82% | 35 | 226.50 | 42,609 |
+
+The **95th-percentile policy** was selected as a service-oriented scenario.
+
+Compared with forecasting without safety stock, it:
+
+- Increased service level from **91.09% to 98.80%**
+- Reduced shortages from **3,200 to 226 units**
+- Reduced total shortage by approximately **92.9%**
+
+This policy should not be interpreted as an economic optimum because holding costs, ordering costs and stockout penalties are not available in the dataset.
+
+---
 
 ## ABC Inventory Classification
 
@@ -131,34 +212,61 @@ Two ABC approaches were explored.
 
 ### Demand-Volume ABC
 
-Demand was relatively evenly distributed across the product portfolio, resulting in limited differentiation.
+The first classification ranked products according to total forecasted demand.
+
+Demand was relatively evenly distributed across the portfolio, meaning that **15 of the 20 products were required to represent approximately 80% of total forecasted demand**.
+
+This provided limited differentiation.
 
 ### Value-Based ABC
 
-A second classification used:
+A second classification incorporated both demand and selling price:
 
-**Forecasted Sales Value = Predicted Demand × Price**
+> **Forecasted Sales Value = Predicted Demand × Price**
 
 This produced a more useful commercial segmentation:
 
-- **Class A:** 12 products representing ~80.2% of forecasted sales value
-- **Class B:** 5 products representing ~16.2%
-- **Class C:** 3 products representing ~3.6%
+- **Class A:** 12 products → ~80.2% of forecasted sales value
+- **Class B:** 5 products → ~16.2%
+- **Class C:** 3 products → ~3.6%
 
-Finally, ABC classification was combined with relative forecast uncertainty to support operational prioritization.
+The result shows that products with the highest expected demand are not necessarily those with the highest expected commercial value.
+
+---
+
+## Operational Product Prioritization
+
+As a final step, the value-based ABC classification was combined with product-level forecasting uncertainty.
+
+Relative uncertainty was calculated as:
+
+> **Safety Stock Ratio = Safety Stock / Average Forecast Demand**
+
+This makes safety-stock requirements comparable across products with different demand levels.
+
+Products were then assigned operational priorities according to their commercial importance and forecasting uncertainty.
 
 `P0009` was identified as the only **Critical** SKU because it combines:
 
-- High expected commercial value
+- Class A commercial importance
 - High relative forecasting uncertainty
 
-## Key Takeaways
+Several Class B products also showed high uncertainty, demonstrating that ABC classification alone does not fully capture operational inventory risk.
 
-- XGBoost substantially outperformed both the naive baseline and the other machine learning models.
-- Forecast accuracy varied across products, highlighting the importance of product-specific uncertainty management.
-- Forecast-driven safety stocks significantly improved simulated service levels and reduced shortages.
-- Value-based ABC classification provided more useful prioritization than demand volume alone.
-- Combining commercial importance with forecast uncertainty created a more operationally meaningful inventory-priority framework.
+---
+
+## Key Business Insights
+
+- Machine learning substantially improves demand forecasting compared with a simple previous-day baseline.
+- XGBoost achieved strong performance with an **R² of 0.899**.
+- Forecast accuracy differs across products, making product-specific uncertainty management important.
+- Forecast-driven safety stock can substantially reduce simulated stockout risk.
+- Increasing safety stock improves service level but also increases replenishment and inventory exposure.
+- Demand-volume ABC provided limited differentiation in this portfolio.
+- Incorporating price produced a more informative value-based product prioritization.
+- Combining **commercial value + forecasting uncertainty** provides a more useful operational framework than either metric alone.
+
+---
 
 ## Technologies
 
@@ -171,7 +279,9 @@ Finally, ABC classification was combined with relative forecast uncertainty to s
 - Scikit-learn
 - XGBoost
 - SHAP
-- Jupyter Notebook
+- Jupyter / IPython
+
+---
 
 ## Repository Structure
 
@@ -181,57 +291,95 @@ retail-demand-forecasting-inventory-planning/
 ├── README.md
 ├── notebooks/
 │   └── retail_demand_forecasting_inventory_planning.ipynb
+│
 ├── images/
 │   ├── forecast_vs_actual.png
 │   └── model_comparison.png
+│
 ├── data/
 │   └── README.md
+│
 ├── requirements.txt
 └── .gitignore
 ```
 
+---
+
 ## How to Run
 
-1. Clone the repository.
-2. Install the required Python packages:
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd retail-demand-forecasting-inventory-planning
+```
+
+### 2. Install the dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Download the dataset from the original source and place it in the appropriate local data directory.
-4. Open the notebook:
+### 3. Download the dataset
 
-```bash
-jupyter notebook
+Download the original dataset following the instructions in:
+
+```text
+data/README.md
 ```
 
-5. Run the notebook from top to bottom.
+Save it locally as:
+
+```text
+data/sales_data.csv
+```
+
+### 4. Run the notebook
+
+Open:
+
+```text
+notebooks/retail_demand_forecasting_inventory_planning.ipynb
+```
+
+using your preferred Jupyter-compatible environment and run the notebook from top to bottom.
+
+---
 
 ## Limitations
 
-- The detailed modeling stage focuses on one representative store.
+The results should be interpreted considering several limitations:
+
+- Detailed modeling focuses on a single representative store.
 - Forecasting is designed as a **one-day-ahead** problem.
+- `Demand` is an estimated variable rather than directly observed customer demand.
+- Commercial variables are predictive signals and should not be interpreted causally.
 - Supplier lead times are not available.
-- Holding, ordering and stockout costs are not included.
-- Replenishment assumes inventory can be made available before same-day demand.
-- The ABC analysis uses selling price rather than unit cost.
-- Inventory recommendations should therefore be interpreted as an analytical planning scenario rather than a production-ready optimization system.
+- The inventory simulation assumes replenishment is available before same-day demand.
+- Holding, ordering and stockout costs are not provided.
+- The proposed inventory policy is therefore an analytical planning scenario rather than a mathematically optimal inventory solution.
+- Value-based ABC uses selling price rather than unit cost.
+
+---
 
 ## Future Work
 
 Possible extensions include:
 
-- Multi-store forecasting
-- Multi-step forecasting horizons
-- Probabilistic demand forecasting
+- Multi-store demand forecasting
+- 7-day and 30-day forecasting horizons
+- Probabilistic forecasting and prediction intervals
 - Dynamic safety stock policies
-- Supplier lead times and service constraints
+- Supplier lead-time modeling
 - Holding and stockout cost optimization
-- Model monitoring and retraining
-- Additional time-series or deep learning approaches
+- Additional contextual variables
+- Model monitoring and periodic retraining
+- Comparison with dedicated time-series and deep-learning models
 
 ---
 
-**Author:** Paul Montero  
-**Focus:** Data Analytics · Business Analytics · Demand Forecasting · Inventory Planning
+## Author
+
+**Paul Montero**
+
+Data Analytics · Business Analytics · Demand Forecasting · Inventory Planning
