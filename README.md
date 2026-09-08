@@ -19,11 +19,11 @@ The project goes beyond predicting demand: forecasts are translated into **safet
 
 XGBoost clearly outperformed the naive baseline, Linear Regression and Random Forest models.
 
-![Model Comparison](images/model_comparison.png)
+![Model Comparison](images/forecasting_model_comparison.png)
 
 The final model closely follows the actual aggregated demand during the unseen test period.
 
-![Forecast vs Actual](images/forecast_vs_actual.png)
+![Forecast vs Actual](images/xgboost_forecast_vs_actual.png)
 
 ---
 
