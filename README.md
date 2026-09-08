@@ -40,7 +40,7 @@ Main variables include demand, price, discounts, promotions, inventory levels, u
 
 For the detailed modeling stage, store `S003` was selected as a representative store, resulting in **15,200 observations across 20 products**.
 
-> **Dataset source:** Add the original dataset URL here.  
+> **Dataset source:** https://www.kaggle.com/datasets/atomicd/retail-store-inventory-and-demand-forecasting
 > The dataset is distributed under the **Apache License 2.0**.
 
 ## Methodology
